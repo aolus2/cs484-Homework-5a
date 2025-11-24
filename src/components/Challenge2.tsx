@@ -39,29 +39,26 @@ export default function Challenge2() {
 
   useEffect(() => {
     // Initialize the worker
-    // Set up the message handler
-
+    const worker = new Worker(new URL('../utils/worker.ts', import.meta.url));
+    workerRef.current = worker;
+    worker.onmessage = (e) => {
+      const { count, lastPrime, duration } = e.data;
+      setResult({ count, lastPrime, duration });
+      setComputing(false);
+    };
     // Cleanup worker on unmount
-    return () => {};
+    return () => {
+      worker.terminate();
+      workerRef.current = null;
+    };
   }, []);
 
   const handleCompute = () => {
-    // TODO: This blocks the main thread!
-    // Your task is to move this computation to a Web Worker
-    // Use the skeleton worker.ts in utils folder
-
     setComputing(true);
-    const startTime = performance.now();
-
-    const result = countPrime(limit);
-
-    const endTime = performance.now();
-    setResult({
-      count: result.count,
-      lastPrime: result.lastPrime,
-      duration: endTime - startTime,
-    });
-    setComputing(false);
+    setResult(null);
+    if (workerRef.current) {
+      workerRef.current.postMessage(limit);
+    }
   };
 
   return (

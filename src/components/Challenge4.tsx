@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { List, type RowComponentProps } from "react-window";
+import { List } from "react-window";
 
 interface Movie {
   id: number;
@@ -25,19 +25,32 @@ const generateMovies = (count: number): Movie[] => {
   }));
 };
 
-// TODO: Implement the Row component for react-window
-// Use the data-testid={`movie-row-${index}`} for the row div
+// Row component for react-window
+const Row = ({ index, style, data }: { index: number; style: React.CSSProperties; data: Movie[] }) => {
+  const movie = data[index];
+  return (
+    <div style={{ ...style, display: "flex", alignItems: "center", padding: "0 12px", borderBottom: "1px solid #eee" }} data-testid={`movie-row-${index}`}>
+      <span style={{ flex: 1 }}>{movie.title}</span>
+      <span style={{ flex: 1 }}>{movie.genre}</span>
+      <span style={{ width: 60 }}>{movie.rating} ★</span>
+    </div>
+  );
+};
 
 const Challenge4: React.FC<Challenge4Props> = ({ initialCount = 100000 }) => {
   const [movies] = useState<Movie[]>(() => generateMovies(initialCount));
   const [search, setSearch] = useState("");
 
-  //TODO: UseMemo needs to be implemented here to filter the search results
-  //      based on title or genre
-  // const filteredMovies = useMemo(() => {
-  //   filter logic
-  // }, [movies, search]);
-  const filteredMovies = movies;
+  // UseMemo to filter movies by title or genre
+  const filteredMovies = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    if (!term) return movies;
+    return movies.filter(
+      (movie) =>
+        movie.title.toLowerCase().includes(term) ||
+        movie.genre.toLowerCase().includes(term)
+    );
+  }, [movies, search]);
 
   return (
     <div style={{ padding: 20 }} data-testid="challenge4-root">
@@ -107,21 +120,31 @@ const Challenge4: React.FC<Challenge4Props> = ({ initialCount = 100000 }) => {
           No movies match your filters.
         </div>
       ) : (
-        // TODO: Implement the virtualized List component here
-        // <div
-        //   className="list-wrapper"
-        //   style={{ height: LIST_HEIGHT, border: "1px solid #ddd" }}
-        //   data-testid="challenge4-list-wrapper"
-        // >
-        //   <List/>
-        // </div>
-        <ul>
-          {filteredMovies.map((movie) => (
-            <li key={movie.id}>
-              {movie.title} - {movie.genre} - {movie.rating} ★
-            </li>
-          ))}
-        </ul>
+        <div
+          className="list-wrapper"
+          style={{ height: LIST_HEIGHT, width: 600, border: "1px solid #ddd" }}
+          data-testid="challenge4-list-wrapper"
+        >
+          <List
+            height={LIST_HEIGHT}
+            itemCount={filteredMovies.length}
+            itemSize={ROW_HEIGHT}
+            width={600}
+            itemData={filteredMovies}
+          >
+            {/* @ts-ignore */}
+            {({ index, style, data }) => {
+              const movie = data[index];
+              return (
+                <div style={{ ...style, display: "flex", alignItems: "center", padding: "0 12px", borderBottom: "1px solid #eee" }} data-testid={`movie-row-${index}`}>
+                  <span style={{ flex: 1 }}>{movie.title}</span>
+                  <span style={{ flex: 1 }}>{movie.genre}</span>
+                  <span style={{ width: 60 }}>{movie.rating} ★</span>
+                </div>
+              );
+            }}
+          </List>
+        </div>
       )}
     </div>
   );
